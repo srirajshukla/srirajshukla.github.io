@@ -6,24 +6,28 @@
     <description>Recent content in Posts on Gyanendra&#39;s Website</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 21 Nov 2020 12:00:00 +0000</lastBuildDate><atom:link href="https://srirajshukla.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 18 May 2021 12:00:00 +0000</lastBuildDate><atom:link href="https://srirajshukla.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Tanka Theme Demo</title>
-      <link>https://srirajshukla.github.io/posts/my-first-post/</link>
-      <pubDate>Sat, 21 Nov 2020 12:00:00 +0000</pubDate>
+      <title>Simulating Double Pendulum with Rust and WebAssembly</title>
+      <link>https://srirajshukla.github.io/posts/2021-12-19-simulating-dp-rust-wasm/</link>
+      <pubDate>Tue, 18 May 2021 12:00:00 +0000</pubDate>
       
-      <guid>https://srirajshukla.github.io/posts/my-first-post/</guid>
-      <description>Tanka is a Bootstrap-based minimalist theme for Hugo.
-Vik, Iceland. Photo by Adam Jang.
- Typography Follows the Bootstrap typography.
-h1 Heading h2 Heading h3 Heading h4 Heading h5 Heading h6 Heading  This is bold text
-This is bold text
-This is italic text
-This is italic text
-Deleted text
- Block quotes are written like so.
-They can span multiple paragraphs, if you like.
- Some text, and some code and then a nice plain link with title.</description>
+      <guid>https://srirajshukla.github.io/posts/2021-12-19-simulating-dp-rust-wasm/</guid>
+      <description>What is a Double Pendulum? A double pendulum is a pendulum with another pendulum attached to its end, and is a simple physical system that exhibits rich dynamic behavior with a strong sensitivity to initial conditions.
+In the next few articles I&amp;rsquo;m going to describe how this motion happens, and how to simulate it using rust and webassembly. Meanwhile, check it out at: https://dpvis.herokuapp.com/</description>
+    </item>
+    
+    <item>
+      <title>The Problem with auto_now and auto_now_add in Django.</title>
+      <link>https://srirajshukla.github.io/posts/2020-12-18-django-auto-time/</link>
+      <pubDate>Fri, 18 Dec 2020 12:00:00 +0000</pubDate>
+      
+      <guid>https://srirajshukla.github.io/posts/2020-12-18-django-auto-time/</guid>
+      <description>auto_now and auto_add_now are attributes to Django DateTimeField methods.
+auto_now changes the field to timezone.now whenever the field is saved, auto_now_add on the other hand only updates the field once when it is created.
+Let&amp;rsquo;s say you have created a model like this:
+class TimeTest(models.Model): created = models.DateTimeField(auto_now_add=True) updated = models.DateTimeField(auto_now=True) Now, for some reasons, you want to update the created field in your model - You Can&amp;rsquo;t.
+So you think, what can I do, you do some googling, and find that there&amp;rsquo;s a property called editable.</description>
     </item>
     
   </channel>
