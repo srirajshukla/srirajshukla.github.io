@@ -14,7 +14,8 @@
       
       <guid>https://srirajshukla.github.io/posts/2021-12-19-simulating-dp-rust-wasm/</guid>
       <description>What is a Double Pendulum? A double pendulum is a pendulum with another pendulum attached to its end, and is a simple physical system that exhibits rich dynamic behavior with a strong sensitivity to initial conditions.
-In the next few articles I&amp;rsquo;m going to describe how this motion happens, and how to simulate it using rust and webassembly. Meanwhile, check it out at: https://dpvis.herokuapp.com/</description>
+In the next few articles I&amp;rsquo;m going to describe how this motion happens, and how to simulate it using rust and webassembly. Meanwhile, check it out at: https://dpvis.herokuapp.com/
+Seting up the dev environment What you&amp;rsquo;ll need  Rust Wasm-pack Node.</description>
     </item>
     
     <item>
