@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building a WebAssembly App with Go - Gyanendra Shukla</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+</head>
+<body>
+    <div class="grid-bg"></div>
+
+    <div class="container">
+        <header class="page-header">
+            <h1><a href="/">Gyanendra Shukla</a></h1>
+            <nav class="nav-links">
+                <a href="/projects">Projects</a>
+                <a href="/blog">Blog</a>
+                <a href="/about">About</a>
+            </nav>
+        </header>
+
+        <article class="blog-post">
+            <header class="blog-post-header">
+                <h1 class="blog-post-title">Building a WebAssembly App with Go</h1>
+                <div class="blog-post-meta">
+                    <span class="post-date">July 31, 2025</span>
+                    <div class="post-tags">
+                        <span class="tag">Go</span>
+                        <span class="tag">WebAssembly</span>
+                        <span class="tag">JavaScript</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="blog-post-content">
+                <p>We can use WebAssembly (WASM) to run program written in languages other than JavaScript in the browser at near-native speed. In this post, I'll explore how I created the <a href="/projects/monkey/index.html">Monkey Language Playground</a>. </p>
+                <p>
+                    I wanted to be able to quickly demo my language without downloading a binary. A traditional approach would be to have a server which runs an instance of the application whenever a client connects. But I wanted to do it in the browser itself. WASM was a natural choice for this. I had done a previous project where I used webassembly to build a <a href="https://github.com/srirajshukla/double-pendulam-visualisation" target="_blank"> double pendulum simulation in rust and javascript </a>. If I could compile my go code into wasm target, then I can call the interpret function from javascript and have the repl work in browser.
+                </p>
+
+                <h2>Interacting between Go and JavaScript</h2>
+
+                <p>When compiling Go to WASM, the primary bridge is the <code>syscall/js</code> package. There are a few main ways to architect this interaction:</p>
+
+                <h3>1. DOM Manipulation from Go</h3>
+                <p>You can write your entire frontend logic in Go. By accessing the global <code>document</code> object, you can create elements, add event listeners, and modify the DOM structure directly from your Go code.</p>
+                <pre><code>import "syscall/js"
+
+func main() {
+    doc := js.Global().Get("document")
+    div := doc.Call("createElement", "div")
+    div.Set("innerText", "Hello from Go!")
+    doc.Get("body").Call("appendChild", div)
+}</code></pre>
+
+                <h3>2. Exposing Go Functions to JavaScript</h3>
+                <p>This is the approach I used as I already had my library in go. You keep the UI logic in HTML/CSS/JS and use Go as a library that performs heavy calculations or logic.</p>
+                <p><strong>In Go:</strong></p>
+                <pre><code>func myGoFunc(this js.Value, args []js.Value) interface{} {
+    return js.ValueOf("Result from Go")
+}
+
+func main() {
+    js.Global().Set("callMeFromJS", js.FuncOf(myGoFunc))
+    select {} // Keep running
+}</code></pre>
+                <p><strong>In JavaScript:</strong></p>
+                <pre><code>// Once WASM is loaded
+const result = window.callMeFromJS();
+console.log(result); // Output: "Result from Go"</code></pre>
+
+                <h3>3. Shared Memory </h3>
+                <p>For high-performance data transfer, you can use <code>WebAssembly.Memory</code> to share a linear memory buffer between JS and Go. This avoids the overhead of copying data between the two worlds.</p>
+                <p>In this approach, Go exports a pointer to a specific memory location. JavaScript then creates a <code>Uint8Array</code> view on the raw WebAssembly memory buffer at that pointer address.</p>
+                <p><em>For a deep dive into this, check out the <a href="https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Memory">MDN WebAssembly.Memory documentation</a>. </em> </p>
+
+                <h2>How I Built the Monkey Playground</h2>
+
+                <p>My project, <a href="https://github.com/srirajshukla/monkey-lang" target="_blank">Monkey Lang</a>, is an interpreter written in Go. I already had a binary for REPL but I wanted it to compile to wasm.</p>
+
+                <h3>The Go Side</h3>
+                <p>I needed a function that would take the inputCode and evaluated it, which I could then register to be called from javascript. I created a separate file <code>web/wasm.go</code> specifically for the WASM build. Here is the core logic:</p>
+
+                <pre><code>//go:build wasm
+package main
+
+import (
+    "fmt"
+    "gks/monkey_intp/repl"
+    "syscall/js"
+)
+
+// Wrapper to call the interpreter
+func evalProgram(this js.Value, args []js.Value) interface{} {
+    inputCode := args[0].String()
+    return js.ValueOf(repl.EvaluateProgramFromString(inputCode))
+}
+
+func registerCallbacks() {
+    js.Global().Set("evaluateProgram", js.FuncOf(evalProgram))
+}
+
+func main() {
+    c := make(chan struct{}, 0)
+    fmt.Println("Go WASM initialized")
+    registerCallbacks()
+    <-c // Block forever to prevent the program from exiting
+}</code></pre>
+
+                <p>The <code>main</code> function sets up the channel to keep the runtime alive. <code>registerCallbacks</code> exposes the <code>evaluateProgram</code> function to the global JavaScript scope.</p>
+
+                <h3>Building the WASM</h3>
+                <p>To compile this, we set the target OS to <code>js</code> and architecture to <code>wasm</code>:</p>
+                <pre><code>$env:GOOS=js // on linux: set GOOS=js
+$env:GOARCH=wasm // on linux: set GOARCH=wasm
+go build -o monkey.wasm web/wasm.go</code></pre>
+
+                <h3>The JavaScript Integration</h3>
+                <p>Go provides a glue file <code>wasm_exec.js</code> (found in the Go installation directory) that must be included. Then, we load the module and set up the UI interaction.</p>
+
+                <p>First, we initialize the WASM runtime:</p>
+                <pre><code>const go = new Go();
+WebAssembly.instantiateStreaming(fetch("monkey.wasm"), go.importObject)
+    .then((result) => {
+        go.run(result.instance);
+        console.log("WASM loaded");
+    });</code></pre>
+
+                <p>Once loaded, the <code>evaluateProgram</code> function defined in Go becomes available on the window object. We can call it directly in our event listeners:</p>
+
+                <pre><code>function runCode() {
+    // Get the code from the textarea
+    const code = document.getElementById("codeSnippet").value;
+
+    // Call the Go function directly!
+    // It takes a string and returns a string (as defined in our wrapper)
+    const result = evaluateProgram(code);
+
+    // Display the output
+    console.log(result);
+}</code></pre>
+
+                <h2>Displaying the output</h2>
+
+                <p>One interesting challenge was capturing the output. My interpreter prints <code>puts</code> calls to standard output (Stdout) using <code>fmt.Println</code>. In the browser, Go's WASM runtime redirects Stdout to the browser console (<code>console.log</code>).</p>
+
+                <h3>My Hacky Solution</h3>
+                <p>To display this output in the web UI, I intercepted the browser's <code>console.log</code>:</p>
+
+                <pre><code>let oldConsole = console.log;
+console.log = function(text) {
+    // Append text to my HTML output div
+    outputDiv.innerText += text + "\n";
+
+    // Still log to the real console
+    oldConsole.apply(console, arguments);
+};
+</code></pre>
+
+                <p>While this works, it captures <em>everything</em> logged to the console, which might include browser warnings or other debug info.</p>
+
+                <h3>The Proper Solution</h3>
+                <p>A more robust approach would be to modify the Go interpreter to write to a custom interface rather than direct to <code>os.Stdout</code>.</p>
+                <p>We could pass a JavaScript callback function into Go, and have the interpreter call that function with the output string. Alternatively, we could create a custom <code>io.Writer</code> implementation in Go that calls a JS function to update the DOM directly.</p>
+
+                <h2>Conclusion</h2>
+                <p>Getting the REPL to work was surprisingly easy once I figured out how to reigster a function that I can call from javascript. Check out the <a href="https://github.com/srirajshukla/monkey-lang">source code</a> to see the full implementation.</p>
+
+                <h2>References & Further Reading</h2>
+                <ul>
+                    <li><a href="https://pkg.go.dev/syscall/js">Go syscall/js Package Documentation</a> - Official docs for the JS interop package.</li>
+                    <li><a href="https://go.dev/wiki/WebAssembly">Go WebAssembly Wiki</a> - The official wiki page for Go's WASM support.</li>
+                    <li><a href="https://developer.mozilla.org/en-US/docs/WebAssembly">MDN WebAssembly Docs</a> - Comprehensive documentation on WebAssembly concepts.</li>
+                </ul>
+            </div>
+        </article>
+
+        <footer>
+            <p>© 2025 Gyanendra Shukla</p>
+        </footer>
+    </div>
+</body>
+</html>

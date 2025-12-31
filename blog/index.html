@@ -1,64 +1,121 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog - Gyanendra Shukla</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../styles.css">
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
-</head>
-<body>
-    <div class="grid-bg"></div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Blog - Gyanendra Shukla</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../styles.css" />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/apple-touch-icon.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/favicon-32x32.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="/favicon-16x16.png"
+        />
+        <link rel="manifest" href="/site.webmanifest" />
+    </head>
+    <body>
+        <div class="grid-bg"></div>
 
-    <div class="container">
-        <header class="page-header">
-            <h1><a href="/">Gyanendra Shukla</a></h1>
-            <nav class="nav-links">
-                <a href="/projects">Projects</a>
-                <a href="/blog">Blog</a>
-                <a href="/about">About</a>
-            </nav>
-        </header>
+        <div class="container">
+            <header class="page-header">
+                <h1><a href="/">Gyanendra Shukla</a></h1>
+                <nav class="nav-links">
+                    <a href="/projects">Projects</a>
+                    <a href="/blog">Blog</a>
+                    <a href="/about">About</a>
+                </nav>
+            </header>
 
-        <main>
-            <section class="blog-list-section">
-                <h2 class="page-title">Blog</h2>
+            <main>
+                <section class="blog-list-section">
+                    <h2 class="page-title">Blog</h2>
 
-                <div class="blog-posts">
-                    <article class="blog-post-preview">
-                        <div class="post-date">2021-12-19</div>
-                        <h3><a href="/blog/posts/simulating-double-pendulum-rust-wasm.html">Simulating Double Pendulum with Rust and WebAssembly</a></h3>
-                        <p class="post-excerpt">Building a physics simulation that demonstrates chaotic behavior using Rust compiled to WebAssembly for the web.</p>
-                        <div class="post-tags">
-                            <span class="tag">Rust</span>
-                            <span class="tag">WebAssembly</span>
-                            <span class="tag">Physics</span>
-                        </div>
-                    </article>
+                    <div class="blog-posts">
+                        <article class="blog-post-preview">
+                            <div class="post-date">2025-07-31</div>
+                            <h3>
+                                <a href="posts/go-wasm-guide.html"
+                                    >Building a WebAssembly App with Go</a
+                                >
+                            </h3>
+                            <p class="post-excerpt">
+                                A guide on compiling Go to WebAssembly,
+                                interacting with JavaScript, and how I built the
+                                Monkey Language Playground.
+                            </p>
+                            <div class="post-tags">
+                                <span class="tag">Go</span>
+                                <span class="tag">WebAssembly</span>
+                                <span class="tag">JavaScript</span>
+                            </div>
+                        </article>
 
-                    <article class="blog-post-preview">
-                        <div class="post-date">2020-12-18</div>
-                        <h3><a href="/blog/posts/django-auto-time-problem.html">The Problem with auto_now and auto_now_add in Django</a></h3>
-                        <p class="post-excerpt">Understanding the limitations of Django's automatic timestamp fields and how to work around them effectively.</p>
-                        <div class="post-tags">
-                            <span class="tag">Python</span>
-                            <span class="tag">Django</span>
-                            <span class="tag">Backend</span>
-                        </div>
-                    </article>
-                </div>
-            </section>
-        </main>
+                        <article class="blog-post-preview">
+                            <div class="post-date">2021-12-19</div>
+                            <h3>
+                                <a
+                                    href="posts/simulating-double-pendulum-rust-wasm.html"
+                                    >Simulating Double Pendulum with Rust and
+                                    WebAssembly</a
+                                >
+                            </h3>
+                            <p class="post-excerpt">
+                                Exploring chaos theory by building a double
+                                pendulum simulation using Rust and WebAssembly
+                                for high-performance physics calculations in the
+                                browser.
+                            </p>
+                            <div class="post-tags">
+                                <span class="tag">Rust</span>
+                                <span class="tag">WebAssembly</span>
+                                <span class="tag">Physics</span>
+                            </div>
+                        </article>
 
-        <footer>
-            <p>© 2025 Gyanendra Shukla</p>
-        </footer>
-    </div>
-</body>
+                        <article class="blog-post-preview">
+                            <div class="post-date">2020-12-18</div>
+                            <h3>
+                                <a
+                                    href="/blog/posts/django-auto-time-problem.html"
+                                    >The Problem with auto_now and auto_now_add
+                                    in Django</a
+                                >
+                            </h3>
+                            <p class="post-excerpt">
+                                Understanding the limitations of Django's
+                                automatic timestamp fields and how to work
+                                around them effectively.
+                            </p>
+                            <div class="post-tags">
+                                <span class="tag">Python</span>
+                                <span class="tag">Django</span>
+                                <span class="tag">Backend</span>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+            </main>
+
+            <footer>
+                <p>© 2025 Gyanendra Shukla</p>
+            </footer>
+        </div>
+    </body>
 </html>
