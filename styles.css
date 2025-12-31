@@ -413,25 +413,58 @@ footer {
 }
 
 .blog-post-content code {
-    background: #e0e7ff;
-    color: #3730a3;
-    padding: 2px 6px;
-    border: 1px solid #3730a3;
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-    font-size: 0.85em; /* Optical adjustment for inline code */
+    background: #fef9c3; /* Yellow-100 */
+    color: #000;
+    padding: 0.2em 0.4em;
+    border: 1px solid #000;
+    font-family: 'Space Mono', 'Courier New', monospace;
+    font-weight: 600;
+    font-size: 0.85em;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
 }
 
 .blog-post-content pre {
-    background: #1e293b;
-    color: #f8fafc;
+    background: #ffffff;
+    color: #18181b;
     border: 2px solid #000;
     box-shadow: 6px 6px 0 #000;
-    padding: 25px;
+    padding: 3rem 1.5rem 1.5rem; /* Extra top padding for the 'window bar' */
     border-radius: 0;
     margin-bottom: 2em;
     overflow-x: auto;
-    line-height: 1.5;
+    line-height: 1.6;
+    position: relative;
+}
+
+/* The "Window Header" for code blocks */
+.blog-post-content pre::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2rem;
+    background: #f1f5f9; /* Slate-100 */
+    border-bottom: 2px solid #000;
+    /* Cute little dot pattern for texture */
+    background-image: radial-gradient(#94a3b8 20%, transparent 20%);
+    background-size: 6px 6px;
+    background-position: 0 0;
+    opacity: 0.5;
+}
+
+ /*Ensure the code scroll area is separate
+    This removes the yellow background that we have for pre elements
+ */
+.blog-post-content pre code {
+    display: block;
+    padding: 0;
+    overflow-x: visible;
+    background: transparent;
+    box-shadow: none; 
+    border: none;
+    font-size: 0.9em;
+    color: #18181b;
 }
 
 .blog-post-content blockquote {
