@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Polymorphic Deserialization in Spring Boot - Gyanendra Shukla</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+</head>
+<body>
+    <div class="grid-bg"></div>
+
+    <div class="container">
+        <header class="page-header">
+            <h1><a href="/">Gyanendra Shukla</a></h1>
+            <nav class="nav-links">
+                <a href="/projects">Projects</a>
+                <a href="/blog">Blog</a>
+                <a href="/about">About</a>
+            </nav>
+        </header>
+
+        <article class="blog-post">
+            <header class="blog-post-header">
+                <h1 class="blog-post-title">Spring Boot : Dynamic Polymorphic Deserialization in using Database Lookups</h1>
+                <div class="blog-post-meta">
+                    <span class="post-date">November 28, 2025</span>
+                    <div class="post-tags">
+                        <span class="tag">Java</span>
+                        <span class="tag">Spring Boot</span>
+                        <span class="tag">Jackson</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="blog-post-content">
+                <p>Polymorphic deserialization in Spring Boot is usually straightforward. You annotate your parent class with <code>@JsonTypeInfo</code>, specify a property like "type", and Jackson handles the rest. But I recently encountered a scenario where the JSON didn't contain any type information.</p>
+
+                <p>The incoming JSON looked like this:</p>
+
+                <pre><code>{
+  "datasetId": "123-abc",
+  "payload": "..."
+}</code></pre>
+
+                <p>To determine whether this was a SQL Dataset or a CSV Dataset, I had to take that <code>datasetId</code>, query a metadata service (or database), and then decide which Java class to instantiate. Since standard Jackson annotations can't access the Spring Service layer, I had to write a custom deserializer.</p>
+
+                <h2>The Scenario</h2>
+
+                <p>In a recent Data Ingestion API project, the endpoint accepted a generic payload, but the processing logic varied based on the dataset type.</p>
+
+                <p>I wanted the Controller to look clean like this:</p>
+
+                <pre><code>@PostMapping("/process")
+public ResponseEntity&lt;String&gt; process(@RequestBody BaseDatasetRequest request) {
+    if (request instanceof SqlDatasetRequest) {
+        // handle SQL
+    } else if (request instanceof CsvDatasetRequest) {
+        // handle CSV
+    }
+}</code></pre>
+
+                <p>Standard solutions like <code>@JsonTypeInfo</code> failed because we didn't have a discriminator field. Manual parsing felt dirty and it would bypass Spring's validation pipeline as well.</p>
+
+                <h2>The Solution</h2>
+
+                <p>Spring Boot provides <code>@JsonComponent</code>, which registers a class as a Jackson deserializer and treats it as a Spring Bean. This allows us to inject services directly into the deserializer.</p>
+
+                <h3>The Models</h3>
+                <p>We have a parent class and two concrete implementations:</p>
+
+                <pre><code>public abstract class BaseDatasetRequest {
+    private String datasetId;
+    // getters/setters
+}
+
+// Concrete Class A
+public class SqlDatasetRequest extends BaseDatasetRequest {
+    private String connectionString;
+}
+
+// Concrete Class B
+public class CsvDatasetRequest extends BaseDatasetRequest {
+    private String s3BucketUrl;
+}</code></pre>
+
+                <h3>Custom Deserializer</h3>
+                <p>I registered a deserializer for <code>BaseDatasetRequest</code> and injected the <code>MetadataService</code> into the constructor.</p>
+
+                <pre><code>@JsonComponent
+public class DatasetRequestDeserializer extends JsonDeserializer&lt;BaseDatasetRequest&gt; {
+
+    private final DatasetMetadataService metadataService;
+
+    @Autowired
+    public DatasetRequestDeserializer(DatasetMetadataService metadataService) {
+        this.metadataService = metadataService;
+    }
+
+    @Override
+    public BaseDatasetRequest deserialize(JsonParser p, DeserializationContext ctxt) 
+            throws IOException {
+        
+        ObjectCodec codec = p.getCodec();
+        // 1. Read the JSON into a tree
+        JsonNode node = codec.readTree(p);
+
+        // 2. Extract ID and lookup Type in the DB
+        String id = node.get("datasetId").asText();
+        DatasetType type = metadataService.getDatasetType(id);
+
+        // 3. Determine the target class
+        Class&lt;? extends BaseDatasetRequest&gt; targetClass;
+        if (type == DatasetType.SQL) {
+            targetClass = SqlDatasetRequest.class;
+        } else {
+            targetClass = CsvDatasetRequest.class;
+        }
+
+        // 4. Convert the tree to the specific class
+        return codec.treeToValue(node, targetClass);
+    }
+}</code></pre>
+
+                <h2>Infinite Recursion Issue</h2>
+
+                <p>The code above compiles, but it causes a <code>StackOverflowError</code> at runtime. When <code>codec.treeToValue</code> tries to deserialize the specific subclass, Jackson looks for a deserializer. Since the subclass doesn't have one, it falls back to the parent's deserializer—the one we just wrote—creating an infinite loop.</p>
+
+                <h2>The Fix</h2>
+
+                <p>To solve this, we need to explicitly tell Jackson to use the default deserializer for the subclasses. We can do this using the <code>@JsonDeserialize</code> annotation.</p>
+
+                <pre><code>import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+
+@JsonDeserialize(using = JsonDeserializer.None.class)
+public class SqlDatasetRequest extends BaseDatasetRequest {
+    // ...
+}
+
+@JsonDeserialize(using = JsonDeserializer.None.class)
+public class CsvDatasetRequest extends BaseDatasetRequest {
+    // ...
+}</code></pre>
+
+                <p>Even though <code>JsonDeserializer.None.class</code> is the default, adding the annotation explicitly stops Jackson from walking up the inheritance hierarchy to find the custom deserializer.</p>
+
+                <h2>Conclusion</h2>
+                <p>By combining <code>@JsonComponent</code> for dependency injection and explicit <code>@JsonDeserialize</code> annotations, we can create the proper object at runtime. Adding a new dataset type now only requires updating the Service and the Deserializer, rather than touching every controller.</p>
+            </div>
+        </article>
+
+        <footer>
+            <p>© 2025 Gyanendra Shukla</p>
+        </footer>
+    </div>
+</body>
+</html>
