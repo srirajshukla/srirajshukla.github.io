@@ -321,6 +321,30 @@ footer {
     background-size: 100% 0.4em;
 }
 
+.post-tags {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.post-tags .tag {
+    background: #ffffff;
+    color: var(--text-main);
+    padding: 4px 10px;
+    font-size: 0.8em;
+    font-weight: 700;
+    border: 2px solid var(--text-main);
+    text-transform: uppercase;
+    box-shadow: 2px 2px 0px 0px #000;
+    transition: all 0.1s;
+}
+
+.blog-post-preview:hover .tag:nth-child(4n+1) { background: #fde047; } /* Yellow */
+.blog-post-preview:hover .tag:nth-child(4n+2) { background: #4ade80; } /* Green */
+.blog-post-preview:hover .tag:nth-child(4n+3) { background: #22d3ee; } /* Cyan */
+.blog-post-preview:hover .tag:nth-child(4n+4) { background: #f472b6; } /* Pink */
+
 /* Blog Post Content - Detailed View */
 .blog-post {
     background: var(--card-bg);
