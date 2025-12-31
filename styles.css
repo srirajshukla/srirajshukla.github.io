@@ -496,7 +496,7 @@ footer {
     margin-bottom: 1.5rem;
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: flex-start;
 }
 
 .bc-name {
@@ -505,6 +505,15 @@ footer {
     font-weight: 900;
     text-transform: uppercase;
     line-height: 1;
+}
+
+.bc-location {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    text-align: right;
+    line-height: 1.2;
 }
 
 .bc-title {
