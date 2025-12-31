@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Problem with auto_now and auto_now_add in Django - Gyanendra Shukla</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+</head>
+<body>
+    <div class="grid-bg"></div>
+
+    <div class="container">
+        <header class="page-header">
+            <h1><a href="/">Gyanendra Shukla</a></h1>
+            <nav class="nav-links">
+                <a href="/projects">Projects</a>
+                <a href="/blog">Blog</a>
+                <a href="/about">About</a>
+            </nav>
+        </header>
+
+        <article class="blog-post">
+            <header class="blog-post-header">
+                <h1 class="blog-post-title">The Problem with auto_now and auto_now_add in Django</h1>
+                <div class="blog-post-meta">
+                    <span class="post-date">December 18, 2020</span>
+                    <div class="post-tags">
+                        <span class="tag">Python</span>
+                        <span class="tag">Django</span>
+                        <span class="tag">Backend</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="blog-post-content">
+                <p>Django's <code>DateTimeField</code> provides two convenient parameters for automatic timestamp management: <code>auto_now</code> and <code>auto_now_add</code>. While these seem straightforward at first, they come with subtle limitations that can cause frustration when you need more flexibility.</p>
+
+                <h2>Understanding auto_now and auto_now_add</h2>
+
+                <p>Let's start with what these parameters do:</p>
+
+                <ul>
+                    <li><strong>auto_now_add:</strong> Automatically sets the field to the current datetime when the object is first created. The field is then never updated on subsequent saves.</li>
+                    <li><strong>auto_now:</strong> Automatically sets the field to the current datetime every time the object is saved.</li>
+                </ul>
+
+                <p>A typical use case looks like this:</p>
+
+                <pre><code>class TimeTest(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)</code></pre>
+
+                <p>This pattern is common for tracking when records are created and last modified. The <code>created</code> field is set once on creation, while <code>updated</code> changes every time you save the object.</p>
+
+                <h2>The Hidden Constraint</h2>
+
+                <p>Here's where things get tricky: fields with <code>auto_now_add=True</code> or <code>auto_now=True</code> are automatically set to <code>editable=False</code>. This means:</p>
+
+                <ul>
+                    <li>They won't appear in model forms</li>
+                    <li>They can't be manually set or overridden</li>
+                    <li>You can't pass values for these fields when creating objects</li>
+                </ul>
+
+                <p>This is by design—Django assumes that if you want automatic timestamps, you never want to manually control them.</p>
+
+                <h2>When This Becomes a Problem</h2>
+
+                <p>The issue arises when you need to:</p>
+
+                <ol>
+                    <li><strong>Import historical data:</strong> You have old records with specific creation timestamps that you need to preserve</li>
+                    <li><strong>Testing:</strong> You want to create objects with specific timestamps for test scenarios</li>
+                    <li><strong>Data migrations:</strong> You're migrating from another system and need to maintain original timestamps</li>
+                    <li><strong>Manual overrides:</strong> In rare cases, you need to manually adjust timestamps (e.g., correcting errors)</li>
+                </ol>
+
+                <p>If you try to make a field with <code>auto_now_add</code> editable, you'll run into migration errors:</p>
+
+                <pre><code>class TimeTest(models.Model):
+    created = models.DateTimeField(auto_now_add=True, editable=True)
+    updated = models.DateTimeField(auto_now=True)</code></pre>
+
+                <p>Running <code>python manage.py makemigrations</code> will fail with a <code>KeyError</code> or similar error. Django explicitly prevents this combination because it's considered contradictory—why would you want both automatic and manual control?</p>
+
+                <h2>Solution 1: Use default Instead</h2>
+
+                <p>The most straightforward solution is to use <code>default</code> instead of <code>auto_now_add</code>:</p>
+
+                <pre><code>from django.utils import timezone
+
+class TimeTest(models.Model):
+    created = models.DateTimeField(default=timezone.now)
+    updated = models.DateTimeField(auto_now=True)</code></pre>
+
+                <p>With <code>default</code>, the field is still editable, so you can override it when needed:</p>
+
+                <pre><code># Normal creation uses current time
+obj = TimeTest.objects.create()
+
+# But you can override it
+historical_obj = TimeTest.objects.create(
+    created=datetime(2020, 1, 1, tzinfo=timezone.utc)
+)</code></pre>
+
+                <p>Note: Use <code>timezone.now</code> without parentheses—you're passing the function itself, not calling it. Django will call it when needed.</p>
+
+                <h2>Solution 2: Override save() for auto_now Behavior</h2>
+
+                <p>For the <code>updated</code> field, if you need it to be editable, you can implement the auto-update logic yourself:</p>
+
+                <pre><code>from django.utils import timezone
+
+class TimeTest(models.Model):
+    created = models.DateTimeField(default=timezone.now)
+    updated = models.DateTimeField(default=timezone.now)
+
+    def save(self, *args, **kwargs):
+        # Update 'updated' field unless explicitly told not to
+        if not kwargs.pop('skip_updated', False):
+            self.updated = timezone.now()
+        super().save(*args, **kwargs)</code></pre>
+
+                <p>This gives you full control: the field updates automatically by default, but you can override it when needed:</p>
+
+                <pre><code># Normal save updates 'updated'
+obj.save()
+
+# Can skip the update
+obj.save(skip_updated=True)
+
+# Can set it manually
+obj.updated = specific_datetime
+obj.save(skip_updated=True)</code></pre>
+
+                <h2>Solution 3: Custom Field Subclass</h2>
+
+                <p>For a more reusable solution, create a custom field class:</p>
+
+                <pre><code>from django.db import models
+from django.utils import timezone
+
+class AutoDateTimeField(models.DateTimeField):
+    def pre_save(self, model_instance, add):
+        if add or not getattr(model_instance, '_skip_auto_now', False):
+            value = timezone.now()
+            setattr(model_instance, self.attname, value)
+            return value
+        else:
+            return super().pre_save(model_instance, add)
+
+class TimeTest(models.Model):
+    created = models.DateTimeField(default=timezone.now)
+    updated = AutoDateTimeField(default=timezone.now)</code></pre>
+
+                <h2>Best Practices</h2>
+
+                <p>Based on my experience, here are some recommendations:</p>
+
+                <ol>
+                    <li><strong>For created timestamps:</strong> Use <code>default=timezone.now</code> instead of <code>auto_now_add</code>. This gives you flexibility without much downside.</li>
+                    <li><strong>For updated timestamps:</strong> <code>auto_now=True</code> is usually fine unless you specifically need manual control.</li>
+                    <li><strong>Be explicit in tests:</strong> Always pass explicit timestamps in test data rather than relying on automatic values.</li>
+                    <li><strong>Document exceptions:</strong> If you need to override timestamps, document why in comments.</li>
+                </ol>
+
+                <h2>Conclusion</h2>
+
+                <p>While <code>auto_now</code> and <code>auto_now_add</code> seem convenient, their inflexibility can cause problems down the line. Understanding these limitations and using alternatives like <code>default</code> or custom <code>save()</code> methods gives you better control while maintaining the convenience of automatic timestamps.</p>
+
+                <p>The key is knowing when you need that flexibility. For simple cases, <code>auto_now_add</code> works fine. But if you're building a system that might need to import historical data or requires fine-grained control, it's better to use the more flexible approaches from the start.</p>
+            </div>
+        </article>
+
+        <footer>
+            <p>© 2025 Gyanendra Shukla</p>
+        </footer>
+    </div>
+</body>
+</html>

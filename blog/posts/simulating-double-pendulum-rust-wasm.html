@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulating Double Pendulum with Rust and WebAssembly - Gyanendra Shukla</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+</head>
+<body>
+    <div class="grid-bg"></div>
+
+    <div class="container">
+        <header class="page-header">
+            <h1><a href="/">Gyanendra Shukla</a></h1>
+            <nav class="nav-links">
+                <a href="/projects">Projects</a>
+                <a href="/blog">Blog</a>
+                <a href="/about">About</a>
+            </nav>
+        </header>
+
+        <article class="blog-post">
+            <header class="blog-post-header">
+                <h1 class="blog-post-title">Simulating Double Pendulum with Rust and WebAssembly</h1>
+                <div class="blog-post-meta">
+                    <span class="post-date">December 19, 2021</span>
+                    <div class="post-tags">
+                        <span class="tag">Rust</span>
+                        <span class="tag">WebAssembly</span>
+                        <span class="tag">Physics</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="blog-post-content">
+                <p>A double pendulum is a pendulum with another pendulum attached to its end, and is a simple physical system that exhibits rich dynamic behavior with a strong sensitivity to initial conditions. Despite its apparent simplicity, the double pendulum demonstrates chaotic motion that makes it fascinating to study and simulate.</p>
+
+                <h2>Why Double Pendulum?</h2>
+
+                <p>The double pendulum is a classic example of a chaotic system in classical mechanics. What makes it particularly interesting is that even tiny differences in initial conditions can lead to dramatically different outcomes. This property, known as sensitive dependence on initial conditions, is a hallmark of chaotic systems.</p>
+
+                <p>When you release multiple double pendulums from nearly identical starting positions, they initially move together, but quickly diverge into completely different patterns. This beautiful visualization of chaos theory makes the double pendulum a perfect candidate for simulation.</p>
+
+                <div style="text-align: center; margin: 2rem 0;">
+                    <img src="images/rainbowPend.gif" alt="Double Pendulum Chaos Visualization" style="max-width: 100%; border: 2px solid #000; box-shadow: 5px 5px 0 #000;">
+                    <p style="font-size: 0.9em; color: var(--text-muted); margin-top: 0.5rem; font-style: italic;">Visualizing sensitive dependence on initial conditions</p>
+                </div>
+
+                <h2>Technology Stack</h2>
+
+                <p>For this project, I chose to use Rust compiled to WebAssembly (WASM) for several reasons:</p>
+
+                <ul>
+                    <li><strong>Performance:</strong> Rust provides near-native performance, which is crucial for real-time physics simulations with multiple pendulums</li>
+                    <li><strong>Memory Safety:</strong> Rust's ownership system prevents common bugs without runtime overhead</li>
+                    <li><strong>Web Integration:</strong> WebAssembly allows the simulation to run directly in the browser with excellent performance</li>
+                    <li><strong>Portability:</strong> The same simulation code can run anywhere WebAssembly is supported</li>
+                </ul>
+
+                <h3>Setting Up the Development Environment</h3>
+
+                <p>To get started with this project, you'll need three main tools:</p>
+
+                <ol>
+                    <li><strong>Rust:</strong> The programming language we'll use for the simulation logic</li>
+                    <li><strong>wasm-pack:</strong> A tool for building and packaging Rust code for WebAssembly</li>
+                    <li><strong>Node.js:</strong> For running the development server and managing the JavaScript side of the application</li>
+                </ol>
+
+                <p>You can install Rust using rustup:</p>
+
+                <pre><code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh</code></pre>
+
+                <p>Then install wasm-pack:</p>
+
+                <pre><code>cargo install wasm-pack</code></pre>
+
+                <h2>The Physics Behind It</h2>
+
+                <p>The motion of a double pendulum is governed by a system of coupled differential equations derived from Lagrangian mechanics. The system has four degrees of freedom: two angles (θ₁ and θ₂) and their corresponding angular velocities.</p>
+
+                <p>Without going into the full mathematical derivation, the key insight is that we need to numerically integrate these equations of motion at each time step to update the positions and velocities of both pendulum arms.</p>
+
+                <h2>Implementation Approach</h2>
+
+                <p>The simulation works by:</p>
+
+                <ol>
+                    <li>Initializing multiple pendulums with slightly different starting angles</li>
+                    <li>At each time step, calculating the forces and accelerations using the equations of motion</li>
+                    <li>Updating the positions and velocities using numerical integration (Runge-Kutta method)</li>
+                    <li>Rendering the pendulums and their trails on a canvas element</li>
+                </ol>
+
+                <p>The Rust code handles all the physics calculations and state management, while a thin JavaScript layer handles the rendering and browser interaction.</p>
+
+                <div style="text-align: center; margin: 2rem 0;">
+                    <img src="images/pendulum_ssGif.gif" alt="Double Pendulum Simulation Trails" style="max-width: 100%; border: 2px solid #000; box-shadow: 5px 5px 0 #000;">
+                </div>
+
+                <h2>Live Demo</h2>
+
+                <p>You can see the simulation in action at <a href="https://dpvis.herokuapp.com/" target="_blank" rel="noopener">dpvis.herokuapp.com</a>. Try adjusting the initial conditions and watch how dramatically the paths diverge!</p>
+
+                <h2>What's Next</h2>
+
+                <p>In future posts, I plan to dive deeper into:</p>
+
+                <ul>
+                    <li>The mathematical derivation of the equations of motion</li>
+                    <li>Numerical integration methods and their trade-offs</li>
+                    <li>Optimizing Rust code for WebAssembly</li>
+                    <li>Adding interactive controls for parameters like length, mass, and damping</li>
+                </ul>
+
+                <p>The double pendulum is just one example of chaotic systems that can be explored through simulation. The combination of Rust's performance and WebAssembly's portability opens up exciting possibilities for creating interactive physics simulations that run smoothly in the browser.</p>
+
+                <h2>Conclusion</h2>
+
+                <p>Building this simulation was a great way to explore both the fascinating physics of chaotic systems and the practical aspects of using Rust and WebAssembly for performance-critical applications. The ability to compile Rust to run in the browser with near-native performance makes it an excellent choice for computationally intensive web applications.</p>
+
+                <p>If you're interested in the source code or want to experiment with your own modifications, check out the <a href="https://github.com/srirajshukla/double-pendulam-visualisation" target="_blank" rel="noopener">project repository on GitHub</a>.</p>
+            </div>
+        </article>
+
+        <footer>
+            <p>© 2025 Gyanendra Shukla</p>
+        </footer>
+    </div>
+</body>
+</html>

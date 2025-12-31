@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monkey Lang Playground - Gyanendra Shukla</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+    <link rel="stylesheet" href="monkey.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+</head>
+<body>
+    <div class="grid-bg"></div>
+
+    <div class="container">
+        <header class="page-header">
+            <h1><a href="/">Gyanendra Shukla</a></h1>
+            <nav class="nav-links">
+                <a href="/projects">Projects</a>
+                <a href="/blog">Blog</a>
+                <a href="/about">About</a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="section">
+                <div class="section-header">
+                    <h2>Monkey Lang Playground</h2>
+                </div>
+                
+                <div class="about-content">
+                    <div class="about-text">
+                        <p>Experiment with the Monkey programming language right here in your browser. This implementation compiles to WebAssembly for high-performance execution. It supports functional patterns like closures and higher-order functions.</p>
+                    </div>
+
+                    <div class="playground-wrapper" style="margin-top: 2rem;">
+                        <div class="controls-bar">
+                            <select id="exampleSelector" class="playground-select">
+                                <option value="">Select an example...</option>
+                                <option value="hello">Hello World</option>
+                                <option value="fibonacci">Fibonacci</option>
+                                <option value="fizzbuzz">FizzBuzz</option>
+                                <option value="mapreduce">Map Reduce Filter</option>
+                            </select>
+                            <button id="runButton" class="playground-btn" onclick="getOutput()" disabled>Run Code</button>
+                            <button id="resetButton" class="playground-btn secondary" onclick="reset_inst()">Reset</button>
+                        </div>
+
+                        <textarea id="codeSnippet" class="editor-area" placeholder="Write your Monkey code here..." spellcheck="false">puts("Hello World!");</textarea>
+
+                        <div id="outputSection" class="output-area">Loading WASM module...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2025 Gyanendra Shukla</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="wasm_exec.js"></script>
+    <script>
+        // Examples Data
+        const examples = {
+            hello: 'puts("Hello World!");',
+            fibonacci: `let fibonacci = fn(x) {
+   if (x < 2) {
+        return x;
+    } else {
+        return fibonacci(x - 1) + fibonacci(x - 2);
+    }
+};
+
+puts("Fibonacci sequence:");
+let fibonacci_iter = fn(start, end) {
+    let iter = fn(i) {
+        if (i < end) {
+            puts(fibonacci(i));
+            iter(i+1);
+        }
+    }
+    iter(start);
+}
+
+fibonacci_iter(1, 10);`,
+            fizzbuzz: `let start = 1;
+let end = 100;
+
+let fizzbuzz = fn (i) {
+    if (and(rem(i, 5) == 0, rem(i, 3) == 0 )) {
+        return "FizzBuzz";
+    }
+    if (rem(i, 5) == 0) {
+        return "Fizz";
+    }
+    if (rem(i, 3) == 0) {
+        return "Buzz";
+    }
+
+    return "";
+};
+
+let solveFizzBuzz = fn (s, e) {
+    if (s > e) {
+        return "";
+    }
+
+    let v = fizzbuzz(s);
+
+    if (!eq(v, "")) {
+        puts(join(s, " = ", v));
+    }
+    return solveFizzBuzz(s+1, e);
+};
+
+puts(start, end);
+solveFizzBuzz(start, end);`,
+            mapreduce: `let map = fn(arr, f) {
+    let iter = fn(arr, acc) {
+        if (len(arr) == 0) {
+            acc
+        } else {
+            iter(rest(arr), push(acc, f(first(arr))))
+        }
+    };
+
+    iter(arr, [])
+};
+
+let a = [1, 2, 3];
+puts(join("original array: ", a), "");
+let square = fn (x) {x * x};
+
+puts(join("mapped array: ", map(a, square)));
+
+let reduce = fn(arr, init, f) {
+    let iter = fn(arr, acc) {
+        if (len(arr) == 0) {
+            acc
+        } else {
+            iter(rest(arr), f(acc, first(arr)))
+        }
+    };
+
+    iter(arr, init);
+};
+
+let reduced = reduce(map(a, square), 0, fn(s, v) {s + v});
+
+puts(join("Reduced Value = ", reduced)) `
+        };
+
+        // Load example code
+        document.getElementById('exampleSelector').addEventListener('change', function () {
+            const key = this.value;
+            if (key && examples[key]) {
+                document.getElementById('codeSnippet').value = examples[key];
+            }
+        });
+
+        // WASM module loading and execution
+        if (!WebAssembly.instantiateStreaming) { // polyfill
+            WebAssembly.instantiateStreaming = async (resp, importObject) => {
+                const source = await (await resp).arrayBuffer();
+                return await WebAssembly.instantiate(source, importObject);
+            };
+        }
+
+        let go, mod, inst;
+
+        async function initWasm() {
+            try {
+                document.getElementById('outputSection').innerText = "Loading WASM module...";
+                
+                go = new Go();
+                const result = await WebAssembly.instantiateStreaming(
+                    fetch("monkey.wasm"), 
+                    go.importObject
+                );
+                mod = result.module;
+                inst = result.instance;
+                document.getElementById('runButton').disabled = false;
+                document.getElementById('outputSection').innerText = "WASM module loaded. Ready to run.";
+                await go.run(inst);
+            } catch (err) {
+                document.getElementById('outputSection').innerText = "Error loading WASM module: " + err.message;
+                console.error(err);
+            }
+        }
+
+        async function reset_inst() {
+            document.getElementById("codeSnippet").value = "";
+            document.getElementById("outputSection").innerText = "Resetting...";
+            console.clear();
+            go = new Go(); // Need new Go instance for clean state usually? Or just re-instantiate
+            inst = await WebAssembly.instantiate(mod, go.importObject);
+            document.getElementById("outputSection").innerText = "Ready.";
+            await go.run(inst);
+        }
+
+        function getOutput() {
+            let outputElement = document.getElementById("outputSection");
+            outputElement.innerText = ""; // Clear previous output
+            
+            let code = document.getElementById("codeSnippet").value;
+            
+            // Hijack console.log to capture output from the Wasm execution
+            // The monkey interpreter likely uses 'console.log' to print 'puts' output
+            let oldConsole = console.log;
+            console.log = function(text) {
+                // If the text is an object/array, stringify it
+                if (typeof text === 'object') {
+                    outputElement.innerText += JSON.stringify(text) + "\n";
+                } else {
+                    outputElement.innerText += text + "\n";
+                }
+                // Also log to real console
+                oldConsole.apply(console, arguments);
+            };
+
+            try {
+                // evaluateProgram is defined in the Go Wasm code and exposed globally
+                if (typeof evaluateProgram === 'function') {
+                    let output = evaluateProgram(code);
+                    if (output !== undefined && output !== null && output !== "") {
+                        console.log(output);
+                    }
+                } else {
+                    console.log("Error: Interpreter not ready.");
+                }
+            } catch (e) {
+                console.log("Error: " + e.message);
+            } finally {
+                console.log = oldConsole;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initWasm);
+    </script>
+</body>
+</html>
