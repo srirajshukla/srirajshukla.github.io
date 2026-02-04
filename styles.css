@@ -519,6 +519,15 @@ footer {
     text-decoration: none;
 }
 
+.blog-post-content .playground-btn {
+    color: #fff;
+    text-decoration: none;
+}
+
+.blog-post-content .playground-btn:hover {
+    color: #fff;
+}
+
 /* Connect - Single Business Card */
 .business-card-container {
     display: flex;
