@@ -76,7 +76,7 @@ Use this template for your blog post:
         </article>
 
         <footer>
-            <p>© 2025 Gyanendra Shukla</p>
+            <p>© 2026 Gyanendra Shukla</p>
         </footer>
     </div>
 </body>
